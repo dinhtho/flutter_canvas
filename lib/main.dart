@@ -35,13 +35,6 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -49,11 +42,32 @@ class _MyHomePageState extends State<MyHomePage> {
         appBar: AppBar(
           title: Text(widget.title),
         ),
-        body: Container(child: CustomPaint(painter: MyPainter(),)));
+        body: Container(
+            child: FutureBuilder<ui.Image>(
+                future: load('assets/images/ic_launcher.png'),
+                builder: (context, snapshot) {
+                  if (snapshot.hasData) {
+                    return CustomPaint(
+                      painter: MyPainter(snapshot.data),
+                    );
+                  }
+                  return Container();
+                })));
+  }
+
+  Future<ui.Image> load(String asset) async {
+    ByteData data = await rootBundle.load(asset);
+    ui.Codec codec = await ui.instantiateImageCodec(data.buffer.asUint8List());
+    ui.FrameInfo fi = await codec.getNextFrame();
+    return fi.image;
   }
 }
 
 class MyPainter extends CustomPainter {
+  final ui.Image image;
+
+  MyPainter(this.image);
+
   @override
   void paint(Canvas canvas, Size size) {
     var paint = Paint()
@@ -70,7 +84,7 @@ class MyPainter extends CustomPainter {
 
     canvas.drawCircle(Offset(100, 100), 50, paint);
 
-    drawImage(paint, canvas);
+    canvas.drawImage(image, Offset(100, 100), paint);
 
     TextPainter textPainter = TextPainter(
         textDirection: TextDirection.ltr,
@@ -82,21 +96,9 @@ class MyPainter extends CustomPainter {
     textPainter.paint(canvas, Offset(50, 50));
   }
 
-  drawImage(Paint paint, Canvas canvas) async {
-    ui.Image image = await load('assets/images/ic_launcher.png');
-    canvas.drawImage(image, Offset(100, 100), paint);
-  }
-
   @override
   bool shouldRepaint(CustomPainter oldDelegate) {
     // TODO: implement shouldRepaint
     return false;
-  }
-
-  Future<ui.Image> load(String asset) async {
-    ByteData data = await rootBundle.load(asset);
-    ui.Codec codec = await ui.instantiateImageCodec(data.buffer.asUint8List());
-    ui.FrameInfo fi = await codec.getNextFrame();
-    return fi.image;
   }
 }
